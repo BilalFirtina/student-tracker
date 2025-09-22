@@ -27,9 +27,7 @@ export default function Header() {
             sx={{ cursor: "pointer" }}
             className="pointer"
             onClick={() => router.push("/profile")}
-          >
-            B
-          </Avatar>
+          ></Avatar>
         </Grid>
       </Grid>
     </Grid>
