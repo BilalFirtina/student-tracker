@@ -1,3 +1,4 @@
+"use client";
 import ReactCalendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { useState } from "react";
@@ -9,43 +10,57 @@ import {
   DialogActions,
   TextField,
 } from "@mui/material";
+import supabase from "@/app/api/supabaseClient";
 
-function Calendar() {
-  const [date, setDate] = useState<Date>(new Date()); // seçili tarih
-  const [open, setOpen] = useState(false); // modal kontrolü
-  const [hours, setHours] = useState<number>(0); // girilen ders saati
-  const [schedule, setSchedule] = useState<{ [key: string]: number }>({}); // tarihler ve saatler
+function Calendar({ student }: { student: any }) {
+  const [date, setDate] = useState<Date>(new Date());
+  const [open, setOpen] = useState(false);
+  const [hours, setHours] = useState<number>(0);
 
   const handleDayClick = (clickedDate: Date) => {
     setDate(clickedDate);
-    setHours(schedule[clickedDate.toDateString()] || 0); // varsa eski değeri al
+    setHours(1);
     setOpen(true);
   };
 
-  const handleSave = () => {
-    setSchedule((prev) => ({
-      ...prev,
-      [date.toDateString()]: hours,
-    }));
+  const handleSave = async () => {
+    const { error } = await supabase.from("lessons").insert({
+      student_id: student.id,
+      date: date.toISOString().split("T")[0],
+      hours,
+    });
+
+    if (error) {
+      console.error("Ders eklenirken hata:", error.message);
+      alert("Ders kaydı başarısız!");
+    } else {
+      alert(
+        `${
+          student.username
+        } için ${date.toDateString()} tarihine ${hours} saat eklendi`
+      );
+    }
+
     setOpen(false);
   };
+
   return (
     <>
       <ReactCalendar
-        onClickDay={handleDayClick} // gün tıklandığında modal aç
+        onClickDay={handleDayClick}
         value={date}
         calendarType="iso8601"
         nextLabel=">"
         prevLabel="<"
       />
-      {/* Ders saatini girme modalı */}
+
       <Dialog open={open} onClose={() => setOpen(false)}>
-        <DialogTitle>Ders Saati Girişi</DialogTitle>
+        <DialogTitle>Ders Saati Girişi ({student.username})</DialogTitle>
         <DialogContent>
           <TextField
             label="Ders Saati"
             type="number"
-            defaultValue={1}
+            value={hours}
             onChange={(e) => setHours(Number(e.target.value))}
             fullWidth
             sx={{ mt: "5px", mb: "5px" }}
