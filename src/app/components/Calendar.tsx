@@ -1,7 +1,7 @@
 "use client";
 import ReactCalendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Button,
   Dialog,
@@ -12,26 +12,72 @@ import {
 } from "@mui/material";
 import supabase from "@/app/api/supabaseClient";
 
-function Calendar({ student }: { student: any }) {
+// Öğrenci profili tipi
+interface StudentProfile {
+  id: string;
+  username: string;
+  role: string;
+  lesson_fee: number;
+}
+
+function CalendarComponent({ student }: { student: StudentProfile }) {
   const [date, setDate] = useState<Date>(new Date());
   const [open, setOpen] = useState(false);
-  const [hours, setHours] = useState<number>(0);
+  const [hours, setHours] = useState<number>(1); // Varsayılan olarak 1 saat
+  const [lessons, setLessons] = useState<any[]>([]);
+  const [activeMonth, setActiveMonth] = useState(new Date());
 
+  // Gün tıklama (sadece öğretmen ders ekleyebilir)
   const handleDayClick = (clickedDate: Date) => {
+    if (student?.role === "student") {
+      alert("Öğrenciler ders ekleyemez.");
+      return;
+    }
     setDate(clickedDate);
     setHours(1);
     setOpen(true);
   };
 
+  // Dersleri DB'den çek
+  useEffect(() => {
+    if (!student) return;
+
+    const fetchLessons = async () => {
+      const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1)
+        .toISOString()
+        .split("T")[0];
+      const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0)
+        .toISOString()
+        .split("T")[0];
+
+      const { data, error } = await supabase
+        .from("lesson_dates")
+        .select("lesson_date, duration")
+        .eq("student_id", student.id)
+        .gte("lesson_date", startOfMonth)
+        .lte("lesson_date", endOfMonth);
+
+      if (error) {
+        console.error(error.message);
+        return;
+      }
+
+      setLessons(data || []);
+    };
+
+    fetchLessons();
+  }, [student, date]);
+
+  // Ders kaydet
   const handleSave = async () => {
-    const { error } = await supabase.from("lessons").insert({
+    if (!student) return;
+    const { error } = await supabase.from("lesson_dates").insert({
       student_id: student.id,
-      date: date.toISOString().split("T")[0],
-      hours,
+      lesson_date: date.toISOString().split("T")[0],
+      duration: hours,
     });
 
     if (error) {
-      console.error("Ders eklenirken hata:", error.message);
       alert("Ders kaydı başarısız!");
     } else {
       alert(
@@ -39,10 +85,27 @@ function Calendar({ student }: { student: any }) {
           student.username
         } için ${date.toDateString()} tarihine ${hours} saat eklendi`
       );
+      setLessons([
+        ...lessons,
+        { lesson_date: date.toISOString().split("T")[0], duration: hours },
+      ]);
     }
-
     setOpen(false);
   };
+
+  // Aylık toplam saat
+  const monthlyTotal = lessons
+    .filter((l) => {
+      const d = new Date(l.lesson_date);
+      return (
+        d.getMonth() === activeMonth.getMonth() &&
+        d.getFullYear() === activeMonth.getFullYear()
+      );
+    })
+    .reduce((sum, l) => sum + (l.duration || 0), 0);
+
+  // Toplam ücret
+  const totalFee = monthlyTotal * (student?.lesson_fee ?? 0);
 
   return (
     <>
@@ -52,10 +115,27 @@ function Calendar({ student }: { student: any }) {
         calendarType="iso8601"
         nextLabel=">"
         prevLabel="<"
+        onActiveStartDateChange={({ activeStartDate }) =>
+          setActiveMonth(activeStartDate || new Date())
+        }
+        tileClassName={({ date }) => {
+          const formatted = date.toISOString().split("T")[0];
+          return lessons.find((l) => l.lesson_date === formatted)
+            ? "lesson-day"
+            : "";
+        }}
       />
 
+      <p style={{ marginTop: "10px" }}>
+        Bu ay toplam: {monthlyTotal} saat →{" "}
+        {new Intl.NumberFormat("tr-TR", {
+          style: "currency",
+          currency: "TRY",
+        }).format(totalFee)}
+      </p>
+
       <Dialog open={open} onClose={() => setOpen(false)}>
-        <DialogTitle>Ders Saati Girişi ({student.username})</DialogTitle>
+        <DialogTitle>Ders Saati Girişi ({student?.username})</DialogTitle>
         <DialogContent>
           <TextField
             label="Ders Saati"
@@ -63,7 +143,6 @@ function Calendar({ student }: { student: any }) {
             value={hours}
             onChange={(e) => setHours(Number(e.target.value))}
             fullWidth
-            sx={{ mt: "5px", mb: "5px" }}
           />
         </DialogContent>
         <DialogActions sx={{ justifyContent: "center" }}>
@@ -77,4 +156,4 @@ function Calendar({ student }: { student: any }) {
   );
 }
 
-export default Calendar;
+export default CalendarComponent;

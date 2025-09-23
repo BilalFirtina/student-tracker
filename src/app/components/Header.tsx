@@ -44,7 +44,6 @@ export default function Header() {
         >
           <Avatar sx={{ cursor: "pointer" }} onClick={handleClick} />
           <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
-            <MenuItem onClick={() => router.push("/profile")}>Profil</MenuItem>
             <MenuItem onClick={handleLogout}>Çıkış Yap</MenuItem>
           </Menu>
         </Grid>

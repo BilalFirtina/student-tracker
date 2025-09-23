@@ -12,7 +12,7 @@ export default function TeacherDashboard() {
     const fetchStudents = async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, username, role")
+        .select("id, username, role, lesson_fee")
         .eq("role", "student");
 
       if (error) {
@@ -45,7 +45,7 @@ export default function TeacherDashboard() {
       {selectedStudent && (
         <div style={{ marginTop: 20 }}>
           <h3>Seçilen öğrenci: {selectedStudent.username}</h3>
-          <Calendar student={selectedStudent} />
+          {selectedStudent && <Calendar student={selectedStudent} />}
         </div>
       )}
     </div>
