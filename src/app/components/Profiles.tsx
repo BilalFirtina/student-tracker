@@ -1,6 +1,6 @@
 "use client";
 
-import { MouseEvent, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, TextField, Grid } from "@mui/material";
 import supabase from "../api/supabaseClient";

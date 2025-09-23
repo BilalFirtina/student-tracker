@@ -4,9 +4,16 @@ import supabase from "@/app/api/supabaseClient";
 import Calendar from "@/app/components/Calendar";
 import { Button } from "@mui/material";
 
+type Student = {
+  id: string;
+  username: string;
+  role: string;
+  lesson_fee: number;
+};
+
 export default function TeacherDashboard() {
-  const [students, setStudents] = useState<any[]>([]);
-  const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   useEffect(() => {
     const fetchStudents = async () => {

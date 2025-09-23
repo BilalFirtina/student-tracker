@@ -20,11 +20,17 @@ interface StudentProfile {
   lesson_fee: number;
 }
 
+// Ders tipi
+interface Lesson {
+  lesson_date: string;
+  duration: number;
+}
+
 function CalendarComponent({ student }: { student: StudentProfile }) {
   const [date, setDate] = useState<Date>(new Date());
   const [open, setOpen] = useState(false);
   const [hours, setHours] = useState<number>(1); // Varsayılan olarak 1 saat
-  const [lessons, setLessons] = useState<any[]>([]);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
   const [activeMonth, setActiveMonth] = useState(new Date());
 
   // Gün tıklama (sadece öğretmen ders ekleyebilir)
