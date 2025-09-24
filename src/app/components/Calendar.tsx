@@ -139,9 +139,10 @@ function Calendar({ student }: { student: StudentProfile }) {
       <p style={{ marginTop: "10px" }}>
         Bu ay toplam: {monthlyTotal} saat →{" "}
         {new Intl.NumberFormat("tr-TR", {
-          style: "currency",
-          currency: "TRY",
-        }).format(totalFee)}
+          style: "decimal",
+          maximumFractionDigits: 0, // virgülden sonrasını gösterme
+        }).format(totalFee)}{" "}
+        TL
       </p>
 
       <Dialog open={open} onClose={() => setOpen(false)}>
@@ -150,7 +151,6 @@ function Calendar({ student }: { student: StudentProfile }) {
           <TextField
             label="Ders Saati"
             type="number"
-            inputProps={{ min: 1 }}
             value={hours}
             onChange={(e) => setHours(Number(e.target.value))}
             fullWidth
