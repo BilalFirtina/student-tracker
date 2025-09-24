@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import supabase from "@/app/api/supabaseClient";
 import Calendar from "@/app/components/Calendar";
 
-// Simüle edilecek öğrenci profili için tip tanımı
 interface StudentProfile {
   id: string;
   username: string;
@@ -19,19 +18,24 @@ export default function StudentDashboard() {
   useEffect(() => {
     const fetchCurrentStudent = async () => {
       try {
-        // "Giriş yapmış" öğrenciyi simüle etmek için
-        // profiller tablosundan rolü öğrenci olan ilk kullanıcıyı çekiyoruz.
+        // Auth ile giriş yapan kullanıcıyı al
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
+        if (authError || !user) {
+          throw new Error("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
+        }
+
+        // Bu kullanıcıya ait profili getir
         const { data, error } = await supabase
           .from("profiles")
           .select("id, username, role, lesson_fee")
-          .eq("role", "student")
-          .limit(1)
-          .single(); // .single() metodu tek bir sonuç döndürür veya hata verir
+          .eq("id", user.id)
+          .single();
 
         if (error) {
-          throw new Error(
-            "Öğrenci profili yüklenemedi. Sisteme kayıtlı bir öğrenci olduğundan emin olun."
-          );
+          throw new Error("Öğrenci profili bulunamadı.");
         }
 
         if (data) {
@@ -51,19 +55,16 @@ export default function StudentDashboard() {
     fetchCurrentStudent();
   }, []);
 
-  if (loading) {
+  if (loading)
     return (
       <div style={{ padding: 20, textAlign: "center" }}>Yükleniyor...</div>
     );
-  }
-
-  if (error) {
+  if (error)
     return (
       <div style={{ padding: 20, textAlign: "center", color: "red" }}>
         Hata: {error}
       </div>
     );
-  }
 
   return (
     <div style={{ padding: 20 }}>
