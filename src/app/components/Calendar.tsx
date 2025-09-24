@@ -26,19 +26,15 @@ interface Lesson {
   duration: number;
 }
 
-function CalendarComponent({ student }: { student: StudentProfile }) {
+function Calendar({ student }: { student: StudentProfile }) {
   const [date, setDate] = useState<Date>(new Date());
   const [open, setOpen] = useState(false);
-  const [hours, setHours] = useState<number>(1); // Varsayılan olarak 1 saat
+  const [hours, setHours] = useState<number>(1); // Varsayılan 1 saat
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [activeMonth, setActiveMonth] = useState(new Date());
 
-  // Gün tıklama (sadece öğretmen ders ekleyebilir)
+  // Gün tıklama → Öğretmen ders ekler
   const handleDayClick = (clickedDate: Date) => {
-    if (student?.role === "student") {
-      alert("Öğrenciler ders ekleyemez.");
-      return;
-    }
     setDate(clickedDate);
     setHours(1);
     setOpen(true);
@@ -49,10 +45,19 @@ function CalendarComponent({ student }: { student: StudentProfile }) {
     if (!student) return;
 
     const fetchLessons = async () => {
-      const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1)
+      const startOfMonth = new Date(
+        activeMonth.getFullYear(),
+        activeMonth.getMonth(),
+        1
+      )
         .toISOString()
         .split("T")[0];
-      const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0)
+
+      const endOfMonth = new Date(
+        activeMonth.getFullYear(),
+        activeMonth.getMonth() + 1,
+        0
+      )
         .toISOString()
         .split("T")[0];
 
@@ -72,14 +77,16 @@ function CalendarComponent({ student }: { student: StudentProfile }) {
     };
 
     fetchLessons();
-  }, [student, date]);
+  }, [student, activeMonth]);
 
   // Ders kaydet
   const handleSave = async () => {
     if (!student) return;
+    const formattedDate = date.toLocaleDateString("sv-SE"); // YYYY-MM-DD
+
     const { error } = await supabase.from("lesson_dates").insert({
       student_id: student.id,
-      lesson_date: date.toISOString().split("T")[0],
+      lesson_date: formattedDate,
       duration: hours,
     });
 
@@ -91,10 +98,7 @@ function CalendarComponent({ student }: { student: StudentProfile }) {
           student.username
         } için ${date.toDateString()} tarihine ${hours} saat eklendi`
       );
-      setLessons([
-        ...lessons,
-        { lesson_date: date.toISOString().split("T")[0], duration: hours },
-      ]);
+      setLessons([...lessons, { lesson_date: formattedDate, duration: hours }]);
     }
     setOpen(false);
   };
@@ -125,7 +129,7 @@ function CalendarComponent({ student }: { student: StudentProfile }) {
           setActiveMonth(activeStartDate || new Date())
         }
         tileClassName={({ date }) => {
-          const formatted = date.toISOString().split("T")[0];
+          const formatted = date.toLocaleDateString("sv-SE"); // YYYY-MM-DD
           return lessons.find((l) => l.lesson_date === formatted)
             ? "lesson-day"
             : "";
@@ -146,6 +150,7 @@ function CalendarComponent({ student }: { student: StudentProfile }) {
           <TextField
             label="Ders Saati"
             type="number"
+            inputProps={{ min: 1 }}
             value={hours}
             onChange={(e) => setHours(Number(e.target.value))}
             fullWidth
@@ -162,4 +167,4 @@ function CalendarComponent({ student }: { student: StudentProfile }) {
   );
 }
 
-export default CalendarComponent;
+export default Calendar;
