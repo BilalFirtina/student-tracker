@@ -123,6 +123,7 @@ function Calendar({ student }: { student: StudentProfile }) {
         onClickDay={handleDayClick}
         value={date}
         calendarType="iso8601"
+        showNeighboringMonth={false}
         nextLabel=">"
         prevLabel="<"
         onActiveStartDateChange={({ activeStartDate }) =>
